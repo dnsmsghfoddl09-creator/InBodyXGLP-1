@@ -1,0 +1,27 @@
+export const COUNTRY_LIST = [
+  { id: "south-korea", name: "South Korea", flag: "🇰🇷", region: "APAC" },
+  { id: "japan", name: "Japan", flag: "🇯🇵", region: "APAC" },
+  { id: "china", name: "China", flag: "🇨🇳", region: "APAC" },
+  { id: "taiwan", name: "Taiwan", flag: "🇹🇼", region: "APAC" },
+  { id: "singapore", name: "Singapore", flag: "🇸🇬", region: "APAC" },
+  { id: "thailand", name: "Thailand", flag: "🇹🇭", region: "APAC" },
+  { id: "vietnam", name: "Vietnam", flag: "🇻🇳", region: "APAC" },
+  { id: "indonesia", name: "Indonesia", flag: "🇮🇩", region: "APAC" },
+  { id: "malaysia", name: "Malaysia", flag: "🇲🇾", region: "APAC" },
+  { id: "philippines", name: "Philippines", flag: "🇵🇭", region: "APAC" },
+  { id: "india", name: "India", flag: "🇮🇳", region: "APAC" },
+  { id: "australia", name: "Australia", flag: "🇦🇺", region: "APAC" },
+  { id: "usa", name: "USA", flag: "🇺🇸", region: "North America" },
+  { id: "canada", name: "Canada", flag: "🇨🇦", region: "North America" },
+  { id: "uk", name: "UK", flag: "🇬🇧", region: "EMEA" },
+  { id: "germany", name: "Germany", flag: "🇩🇪", region: "EMEA" },
+  { id: "france", name: "France", flag: "🇫🇷", region: "EMEA" },
+  { id: "italy", name: "Italy", flag: "🇮🇹", region: "EMEA" },
+  { id: "spain", name: "Spain", flag: "🇪🇸", region: "EMEA" },
+  { id: "brazil", name: "Brazil", flag: "🇧🇷", region: "LATAM" },
+  { id: "mexico", name: "Mexico", flag: "🇲🇽", region: "LATAM" },
+  { id: "saudi-arabia", name: "Saudi Arabia", flag: "🇸🇦", region: "Middle East" },
+  { id: "uae", name: "UAE", flag: "🇦🇪", region: "Middle East" },
+] as const;
+
+export type CountryId = (typeof COUNTRY_LIST)[number]["id"];

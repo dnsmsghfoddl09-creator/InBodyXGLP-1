@@ -1,0 +1,48 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help
+ npmrc` for supported config options.
+위치 줄:1 문자:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> inbodyglp1@0.1.0 build
+> next build
+
+??Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+??Compiled successfully in 5.2s
+  Running TypeScript ...
+  Finished TypeScript in 6.3s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/40) ...
+  Generating static pages using 11 workers (10/40) 
+  Generating static pages using 11 workers (20/40) 
+  Generating static pages using 11 workers (30/40) 
+??Generating static pages using 11 workers (40/40) in 3.0s
+  Finalizing page optimization ...
+
+Route (app)
+????/_not-found
+????/[...slug]
+????/global/dashboard
+????/global/country-explorer
+????/global/country-compare
+????[+28 more paths]
+????/conferences/calendar
+????/conferences/calendar/[id]
+????/conferences/calendar/aoco
+????/conferences/calendar/ada
+????/conferences/calendar/easo
+????[+2 more paths]
+????/dashboard
+????/global/country-compare
+????/global/country-explorer
+????/global/weekly-research-mission
+
+
+?? (Static)  prerendered as static content
+?? (SSG)     prerendered as static HTML (uses generateStaticParams)
+

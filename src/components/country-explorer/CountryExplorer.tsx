@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CountrySelector } from "@/components/country-explorer/CountrySelector";
-import { CountryIntelligenceReport } from "@/components/country-explorer/CountryIntelligenceReport";
+import { CountryResearchWorkspace } from "@/components/country-explorer/CountryResearchWorkspace";
 import {
   countryProvider,
   type CountryId,
@@ -38,7 +38,7 @@ export function CountryExplorer() {
           </div>
         </div>
 
-        <CountryIntelligenceReport report={report} />
+        <CountryResearchWorkspace key={selectedId} countryId={selectedId} report={report} />
       </div>
     </div>
   );

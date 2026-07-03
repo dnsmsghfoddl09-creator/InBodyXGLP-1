@@ -105,9 +105,21 @@ export function CountryMultiSelector({ selectedIds, onChange }: CountryMultiSele
   );
 }
 
-export function CompareActionBar() {
+export function CompareActionBar({ onAddWidget }: { onAddWidget?: () => void }) {
   return (
     <div className="flex flex-wrap gap-2">
+      {onAddWidget && (
+        <button
+          type="button"
+          onClick={onAddWidget}
+          className="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Widget
+        </button>
+      )}
       {[
         { label: "Export", icon: "↓" },
         { label: "Download PPT", icon: "📊" },

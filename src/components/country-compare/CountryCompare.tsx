@@ -10,6 +10,7 @@ import { OpportunityRanking } from "@/components/country-compare/OpportunityRank
 import { ComparisonTable } from "@/components/country-compare/ComparisonTable";
 import { SwotSummary } from "@/components/country-compare/SwotSummary";
 import { AiStrategicSummary } from "@/components/country-compare/AiStrategicSummary";
+import { WidgetBoard } from "@/components/widgets/WidgetBoard";
 import {
   countryProvider,
   type CountryId,
@@ -19,6 +20,7 @@ export function CountryCompare() {
   const [selectedIds, setSelectedIds] = useState<CountryId[]>(
     countryProvider.getDefaultCompareIds(),
   );
+  const [widgetModalOpen, setWidgetModalOpen] = useState(false);
   const profiles = countryProvider.getCompareProfiles(selectedIds);
 
   return (
@@ -41,8 +43,15 @@ export function CountryCompare() {
           <div className="flex-1">
             <CountryMultiSelector selectedIds={selectedIds} onChange={setSelectedIds} />
           </div>
-          <CompareActionBar />
+          <CompareActionBar onAddWidget={() => setWidgetModalOpen(true)} />
         </div>
+
+        <WidgetBoard
+          pageId="country-compare"
+          modalOpen={widgetModalOpen}
+          onModalOpenChange={setWidgetModalOpen}
+          showToolbar={false}
+        />
 
         <StickyCompareHeader profiles={profiles} />
 

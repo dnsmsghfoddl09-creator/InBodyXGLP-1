@@ -139,4 +139,8 @@ export const countryProvider = {
   },
 };
 
+export function getCountries(): CountryIntelligence[] {
+  return countryProvider.getLatest();
+}
+
 export type { CountryReport, CountryCompareProfile };

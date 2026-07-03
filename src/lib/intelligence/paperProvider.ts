@@ -2,47 +2,39 @@ import type { CountryId } from "@/data/countries";
 import { intelligenceService } from "@/lib/intelligence/intelligenceService";
 import type {
   IntelligenceFilter,
-  IntelligenceItem,
   IntelligenceProvider,
   IntelligenceSort,
+  PaperIntelligenceItem,
 } from "@/lib/intelligence/intelligenceTypes";
 
-export type { IntelligenceItem };
+export type { PaperIntelligenceItem };
 
-export function getRegulations(
+export function getPapers(
   filter?: IntelligenceFilter,
   sort: IntelligenceSort = "newest",
-): IntelligenceItem[] {
-  return intelligenceService.getLatestRegulations(filter, sort);
+): PaperIntelligenceItem[] {
+  return intelligenceService.getLatestPapers(filter, sort);
 }
 
-export const regulationProvider: IntelligenceProvider<IntelligenceItem, CountryId> = {
+export const paperProvider: IntelligenceProvider<PaperIntelligenceItem, CountryId> = {
   getLatest() {
-    return getRegulations();
+    return getPapers();
   },
 
   getByCountry(country) {
-    return getRegulations({ country });
+    return getPapers({ country });
   },
 
   search(keyword) {
     if (!keyword.trim()) return this.getLatest();
-    return getRegulations({ keyword });
+    return getPapers({ keyword });
   },
 
   getRelated(tags) {
     if (tags.length === 0) return this.getLatest();
     const normalized = tags.map((t) => t.toLowerCase());
-    return getRegulations().filter((item) =>
+    return getPapers().filter((item) =>
       item.tags.some((t) => normalized.includes(t.toLowerCase())),
     );
   },
 };
-
-export function queryRegulations(
-  country?: CountryId,
-  filter?: IntelligenceFilter,
-  sort: IntelligenceSort = "newest",
-) {
-  return getRegulations(country ? { ...filter, country } : filter, sort);
-}

@@ -13,7 +13,9 @@ import {
   daysUntil,
 } from "@/data/conference-calendar";
 import type { CalendarConference, ConferenceDetail, ConferenceId } from "@/types/conference";
+import { intelligenceService } from "@/lib/intelligence/intelligenceService";
 import type { Conference, IntelligenceProvider } from "@/lib/intelligence/types";
+import type { IntelligenceFilter, IntelligenceItem, IntelligenceSort } from "@/lib/intelligence/intelligenceTypes";
 
 function toConference(entry: CalendarConference): Conference {
   return {
@@ -84,6 +86,13 @@ const baseProvider: IntelligenceProvider<Conference, CountryId> = {
     );
   },
 };
+
+export function getConferences(
+  filter?: IntelligenceFilter,
+  sort: IntelligenceSort = "newest",
+): IntelligenceItem[] {
+  return intelligenceService.getLatestConferences(filter, sort);
+}
 
 export const conferenceProvider = {
   ...baseProvider,

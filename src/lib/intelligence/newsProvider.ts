@@ -1,54 +1,32 @@
 import type { CountryId } from "@/data/countries";
-import { latestNews } from "@/data/mock-data";
-import type { IntelligenceProvider, News } from "@/lib/intelligence/types";
+import { intelligenceService } from "@/lib/intelligence/intelligenceService";
+import type { IntelligenceItem, IntelligenceProvider } from "@/lib/intelligence/types";
 
-const NEWS_COUNTRY_MAP: Record<string, CountryId[]> = {
-  "Supply Chain": ["japan", "south-korea", "indonesia", "thailand"],
-  Regulatory: ["usa", "uk", "germany"],
-  Earnings: ["usa"],
-  "Digital Health": ["usa", "singapore", "australia"],
-};
-
-const MOCK_NEWS: News[] = latestNews.map((item, index) => ({
-  id: `news-${index + 1}`,
-  title: item.title,
-  source: item.source,
-  publishedAt: item.time,
-  tag: item.tag,
-  tags: [item.tag, "GLP-1", "News"],
-  countryIds: NEWS_COUNTRY_MAP[item.tag] ?? ["usa"],
-  summary: item.title,
-}));
-
-function matchesKeyword(item: News, keyword: string): boolean {
-  const q = keyword.toLowerCase();
-  return (
-    item.title.toLowerCase().includes(q) ||
-    item.source.toLowerCase().includes(q) ||
-    item.tag.toLowerCase().includes(q) ||
-    item.tags.some((t) => t.toLowerCase().includes(q))
-  );
+function matchesKeyword(item: IntelligenceItem, keyword: string): boolean {
+  return intelligenceService.filterItems([item], { keyword }).length > 0;
 }
 
-export const newsProvider: IntelligenceProvider<News, CountryId> = {
+export const newsProvider: IntelligenceProvider<IntelligenceItem, CountryId> = {
   getLatest() {
-    return [...MOCK_NEWS];
+    return intelligenceService.getLatestNews();
   },
 
   getByCountry(country) {
-    return MOCK_NEWS.filter((n) => n.countryIds.includes(country));
+    return intelligenceService.getLatestNews({ country });
   },
 
   search(keyword) {
     if (!keyword.trim()) return this.getLatest();
-    return MOCK_NEWS.filter((n) => matchesKeyword(n, keyword));
+    return intelligenceService.getLatestNews({ keyword });
   },
 
   getRelated(tags) {
     if (tags.length === 0) return this.getLatest();
     const normalized = tags.map((t) => t.toLowerCase());
-    return MOCK_NEWS.filter((n) =>
-      n.tags.some((t) => normalized.includes(t.toLowerCase())),
+    return intelligenceService.getLatestNews().filter((item) =>
+      item.tags.some((t) => normalized.includes(t.toLowerCase())),
     );
   },
 };
+
+export { matchesKeyword };

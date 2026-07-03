@@ -20,6 +20,8 @@ import {
 import { WidgetBoard } from "@/components/widgets/WidgetBoard";
 import type { CountryReport } from "@/lib/intelligence";
 import type { CountryId } from "@/lib/intelligence";
+import { intelligenceService } from "@/lib/intelligence/intelligenceService";
+import type { IntelligenceSort } from "@/lib/intelligence/types";
 import {
   COUNTRY_RESEARCH_TABS,
   getCountryResearchData,
@@ -31,8 +33,13 @@ type CountryResearchWorkspaceProps = {
   report: CountryReport;
 };
 
-function matchesSearch(text: string, query: string): boolean {
-  return text.toLowerCase().includes(query.toLowerCase());
+function toIntelSort(sort: SortOption): IntelligenceSort {
+  if (sort === "az") return "alphabetical";
+  return "newest";
+}
+
+function maybeReverse<T>(items: T[], sort: SortOption): T[] {
+  return sort === "oldest" ? [...items].reverse() : items;
 }
 
 function sortByLabel<T extends { title?: string; name?: string; company?: string }>(
@@ -66,6 +73,8 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
 
   const data = useMemo(() => getCountryResearchData(countryId), [countryId]);
+  const intelSort = toIntelSort(sort);
+  const searchFilter = searchQuery.trim() ? { keyword: searchQuery } : undefined;
   const activeTabLabel = COUNTRY_RESEARCH_TABS.find((tab) => tab.id === activeTab)?.label ?? "Records";
 
   const filterOptions = useMemo(() => {
@@ -86,59 +95,43 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
   }, [activeTab]);
 
   const filteredNews = useMemo(() => {
-    let items = data.news.filter(
-      (item) =>
-        !searchQuery ||
-        matchesSearch(`${item.title} ${item.source} ${item.summary}`, searchQuery),
-    );
+    let items = intelligenceService.getCountryNews(countryId, searchFilter, intelSort);
     if (filter !== "All") items = items.filter((item) => item.importance === filter);
-    return sortByLabel(items, sort, (item) => item.publishedDate);
-  }, [data.news, searchQuery, filter, sort]);
+    return maybeReverse(items, sort);
+  }, [countryId, searchFilter, filter, sort, intelSort]);
 
   const filteredPapers = useMemo(() => {
-    const items = data.papers.filter(
-      (item) =>
-        !searchQuery ||
-        matchesSearch(`${item.title} ${item.journal} ${item.authors} ${item.keyFindings}`, searchQuery),
-    );
-    return sortByLabel(items, sort, (item) => item.publicationDate);
-  }, [data.papers, searchQuery, sort]);
+    const items = intelligenceService.getCountryPapers(countryId, searchFilter, intelSort);
+    return maybeReverse(items, sort);
+  }, [countryId, searchFilter, sort, intelSort]);
 
   const filteredTrials = useMemo(() => {
     let items = data.trials.filter(
       (item) =>
         !searchQuery ||
-        matchesSearch(`${item.title} ${item.sponsor} ${item.focus}`, searchQuery),
+        `${item.title} ${item.sponsor} ${item.focus}`.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     if (filter !== "All") items = items.filter((item) => item.status === filter);
     return sortByLabel(items, sort, (item) => item.title);
   }, [data.trials, searchQuery, filter, sort]);
 
   const filteredRegulations = useMemo(() => {
-    let items = data.regulations.filter(
-      (item) =>
-        !searchQuery ||
-        matchesSearch(`${item.title} ${item.agency} ${item.impact}`, searchQuery),
-    );
+    let items = intelligenceService.getCountryRegulations(countryId, searchFilter, intelSort);
     if (filter !== "All") items = items.filter((item) => item.status === filter);
-    return sortByLabel(items, sort, (item) => item.effectiveDate);
-  }, [data.regulations, searchQuery, filter, sort]);
+    return maybeReverse(items, sort);
+  }, [countryId, searchFilter, filter, sort, intelSort]);
 
   const filteredCompetitors = useMemo(() => {
-    let items = data.competitors.filter(
-      (item) =>
-        !searchQuery ||
-        matchesSearch(`${item.company} ${item.currentActivity} ${item.opportunity}`, searchQuery),
-    );
+    let items = intelligenceService.getCountryCompetitors(countryId, searchFilter, intelSort);
     if (filter !== "All") items = items.filter((item) => item.threatLevel === filter);
-    return sortByLabel(items, sort);
-  }, [data.competitors, searchQuery, filter, sort]);
+    return maybeReverse(sortByLabel(items, sort), sort);
+  }, [countryId, searchFilter, filter, sort, intelSort]);
 
   const filteredHospitals = useMemo(() => {
     const items = data.hospitals.filter(
       (item) =>
         !searchQuery ||
-        matchesSearch(`${item.name} ${item.city} ${item.specialty} ${item.researchActivity}`, searchQuery),
+        `${item.name} ${item.city} ${item.specialty} ${item.researchActivity}`.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     return sortByLabel(items, sort);
   }, [data.hospitals, searchQuery, sort]);
@@ -147,7 +140,7 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
     const items = data.kol.filter(
       (item) =>
         !searchQuery ||
-        matchesSearch(`${item.name} ${item.institution} ${item.focusAreas}`, searchQuery),
+        `${item.name} ${item.institution} ${item.focusAreas}`.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     return sortByLabel(items, sort);
   }, [data.kol, searchQuery, sort]);
@@ -156,7 +149,7 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
     let items = data.opportunities.filter(
       (item) =>
         !searchQuery ||
-        matchesSearch(`${item.title} ${item.estimatedImpact} ${item.recommendedAction}`, searchQuery),
+        `${item.title} ${item.estimatedImpact} ${item.recommendedAction}`.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     if (filter !== "All") items = items.filter((item) => item.status === filter);
     return sortByLabel(items, sort, (item) => `P${item.priority}-${item.title}`);

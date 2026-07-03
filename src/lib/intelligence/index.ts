@@ -4,6 +4,12 @@
 
 export type {
   IntelligenceProvider,
+  IntelligenceItem,
+  IntelligenceImportance,
+  IntelligenceFilter,
+  IntelligenceSort,
+  PaperIntelligenceItem,
+  CompetitorIntelligenceItem,
   News,
   Research,
   ResearchPaper,
@@ -14,8 +20,17 @@ export type {
   CountryId,
 } from "@/lib/intelligence/types";
 
+export {
+  applyIntelligenceFilter,
+  applyIntelligenceSort,
+  importanceRank,
+} from "@/lib/intelligence/types";
+
+export { intelligenceService } from "@/lib/intelligence/intelligenceService";
 export { newsProvider } from "@/lib/intelligence/newsProvider";
-export { researchProvider } from "@/lib/intelligence/researchProvider";
+export { papersProvider } from "@/lib/intelligence/papersProvider";
+export { researchProvider } from "@/lib/intelligence/papersProvider";
+export { regulationProvider } from "@/lib/intelligence/regulationProvider";
 export { competitorProvider } from "@/lib/intelligence/competitorProvider";
 export { conferenceProvider } from "@/lib/intelligence/conferenceProvider";
 export type { CalendarConference, ConferenceDetail, ConferenceId } from "@/lib/intelligence/conferenceProvider";

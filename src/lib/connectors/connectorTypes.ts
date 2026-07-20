@@ -47,6 +47,31 @@ export type PubMedQueryDefinition = {
   maxResults?: number;
 };
 
+export type PubMedDebugInfo = {
+  endpoint: string;
+  searchQuery: string;
+  pmidsRetrieved: number;
+  articlesAfterNormalization: number;
+  articlesRendered: number;
+  fallbackStatus: "none" | "mock" | "error";
+  error?: string;
+};
+
+export type PubMedFetchResult = {
+  items: import("@/lib/intelligence/data/mock-research-platform").ResearchPaperItem[];
+  searchQuery: string;
+  pmidsRetrieved: number;
+  articlesAfterNormalization: number;
+};
+
+export type LiveResearchMetadata = {
+  dataSource: "LIVE" | "MOCK";
+  lastUpdated: string | null;
+  pubmedArticleCount: number;
+  activeSource: DataSourceMode;
+  debug?: PubMedDebugInfo;
+};
+
 export type ConferenceFeedDefinition = {
   id: string;
   label: string;

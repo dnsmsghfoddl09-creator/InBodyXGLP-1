@@ -1,23 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PaperCard } from "@/components/country-explorer/ResearchCards";
 import { Badge } from "@/components/ui/Badge";
 import { COUNTRY_LIST, type CountryId } from "@/data/countries";
 import type { PaperRecord } from "@/data/country-research-workspace";
+import { LIVE_DATA_ENABLED } from "@/lib/connectors";
 import {
   EVIDENCE_LEVELS,
   getCountryPaperRecords,
   getCountryResearchComparison,
   getLatestResearchItems,
+  getLiveResearchMetadata,
   getPublicationYears,
   getResearchPaper,
   getResearchPapers,
+  hydrateResearchCacheFromApi,
   RESEARCH_JOURNALS,
   RESEARCH_SORT_OPTIONS,
   RESEARCH_STUDY_TYPES,
   RESEARCH_TOPICS,
   RESEARCH_COUNTRIES,
+  subscribeResearchCache,
   type EvidenceLevel,
   type ResearchPaperItem,
   type ResearchPlatformFilter,
@@ -200,8 +204,78 @@ export function ResearchDetail({ paper }: { paper: ResearchPaperItem }) {
   );
 }
 
+function ResearchDataSourceStatus() {
+  const [meta, setMeta] = useState(getLiveResearchMetadata());
+
+  useEffect(() => {
+    if (LIVE_DATA_ENABLED) {
+      void hydrateResearchCacheFromApi().then(setMeta);
+    }
+    return subscribeResearchCache(() => setMeta(getLiveResearchMetadata()));
+  }, []);
+
+  const lastUpdated = meta.lastUpdated
+    ? new Date(meta.lastUpdated).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+        <span className={`h-2 w-2 rounded-full ${meta.dataSource === "LIVE" ? "bg-emerald-500" : "bg-blue-500"}`} />
+        Research Source · {meta.dataSource}
+      </span>
+      <span className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+        Last Updated · {lastUpdated}
+      </span>
+      <span className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+        PubMed Articles · {meta.pubmedArticleCount}
+      </span>
+    </div>
+  );
+}
+
+function PubMedDebugPanel() {
+  const [meta, setMeta] = useState(getLiveResearchMetadata());
+
+  useEffect(() => subscribeResearchCache(() => setMeta(getLiveResearchMetadata())), []);
+
+  const debug = meta.debug;
+  if (!debug) return null;
+
+  return (
+    <details className="mt-8 rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-4 text-xs text-gray-600">
+      <summary className="cursor-pointer font-semibold text-gray-700">PubMed Debug Diagnostics</summary>
+      <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div><dt className="font-medium text-gray-500">Endpoint</dt><dd>{debug.endpoint}</dd></div>
+        <div><dt className="font-medium text-gray-500">Fallback Status</dt><dd>{debug.fallbackStatus}</dd></div>
+        <div className="sm:col-span-2"><dt className="font-medium text-gray-500">Search Query</dt><dd>{debug.searchQuery}</dd></div>
+        <div><dt className="font-medium text-gray-500">PMIDs Retrieved</dt><dd>{debug.pmidsRetrieved}</dd></div>
+        <div><dt className="font-medium text-gray-500">After Normalization</dt><dd>{debug.articlesAfterNormalization}</dd></div>
+        <div><dt className="font-medium text-gray-500">Articles Rendered</dt><dd>{debug.articlesRendered}</dd></div>
+        {debug.error ? (
+          <div className="sm:col-span-2"><dt className="font-medium text-gray-500">Error</dt><dd>{debug.error}</dd></div>
+        ) : null}
+      </dl>
+    </details>
+  );
+}
+
 export function LatestResearchWidget() {
-  const items = getLatestResearchItems(5);
+  const [cacheVersion, setCacheVersion] = useState(0);
+
+  useEffect(() => {
+    if (LIVE_DATA_ENABLED) {
+      void hydrateResearchCacheFromApi();
+    }
+    return subscribeResearchCache(() => setCacheVersion((value) => value + 1));
+  }, []);
+
+  const items = useMemo(() => getLatestResearchItems(5), [cacheVersion]);
 
   return (
     <section className="rounded-2xl border border-gray-100/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
@@ -257,6 +331,14 @@ export function ResearchIntelligenceModule({
   const [topicFilter, setTopicFilter] = useState<string>("All");
   const [sort, setSort] = useState<ResearchPlatformSort>("newest");
   const [selectedId, setSelectedId] = useState<string>("research-paper-1");
+  const [cacheVersion, setCacheVersion] = useState(0);
+
+  useEffect(() => {
+    if (LIVE_DATA_ENABLED) {
+      void hydrateResearchCacheFromApi();
+    }
+    return subscribeResearchCache(() => setCacheVersion((value) => value + 1));
+  }, []);
 
   const filter = useMemo<ResearchPlatformFilter>(
     () => ({
@@ -292,7 +374,13 @@ export function ResearchIntelligenceModule({
   const papers = useMemo(() => {
     const items = getResearchPapers(filter, sort);
     return limit ? items.slice(0, limit) : items;
-  }, [filter, sort, limit]);
+  }, [filter, sort, limit, cacheVersion]);
+
+  useEffect(() => {
+    if (papers.length > 0 && !papers.some((paper) => paper.id === selectedId)) {
+      setSelectedId(papers[0]!.id);
+    }
+  }, [papers, selectedId]);
 
   const selectedPaper = getResearchPaper(selectedId);
 
@@ -347,6 +435,8 @@ export function ResearchIntelligenceModule({
 
   return (
     <>
+      <ResearchDataSourceStatus />
+
       <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <input
           type="search"
@@ -413,6 +503,8 @@ export function ResearchIntelligenceModule({
           <ResearchDetail paper={selectedPaper} />
         </div>
       ) : null}
+
+      <PubMedDebugPanel />
     </>
   );
 }

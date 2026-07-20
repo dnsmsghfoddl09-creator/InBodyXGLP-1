@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CountryIntelligenceReport } from "@/components/country-explorer/CountryIntelligenceReport";
 import { CountryTabs } from "@/components/country-explorer/CountryTabs";
 import {
@@ -27,8 +27,10 @@ import {
 } from "@/lib/intelligence/competitorProvider";
 import {
   getCountryPaperRecords,
+  hydrateResearchCacheFromApi,
   type ResearchPlatformSort,
 } from "@/lib/intelligence/paperProvider";
+import { LIVE_DATA_ENABLED } from "@/lib/connectors";
 import type { IntelligenceSort } from "@/lib/intelligence/types";
 import {
   COUNTRY_RESEARCH_TABS,
@@ -89,6 +91,12 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
   const [filter, setFilter] = useState("All");
   const [sort, setSort] = useState<SortOption>("newest");
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (LIVE_DATA_ENABLED) {
+      void hydrateResearchCacheFromApi();
+    }
+  }, []);
 
   const data = useMemo(() => getCountryResearchData(countryId), [countryId]);
   const intelSort = toIntelSort(sort);

@@ -12,7 +12,7 @@ import {
   type ResearchPaperItem,
   type StudyType,
 } from "@/lib/intelligence/data/mock-research-platform";
-import { resolveResearchItems } from "@/lib/connectors";
+import { resolveResearchBase } from "@/lib/connectors";
 import { intelligenceService } from "@/lib/intelligence/intelligenceService";
 import type {
   IntelligenceFilter,
@@ -74,7 +74,7 @@ function matchesKeyword(text: string, keyword?: string): boolean {
 }
 
 function filterPapers(filter?: ResearchPlatformFilter): ResearchPaperItem[] {
-  return getAllResearchPapers().filter((paper) => {
+  return resolveResearchBase().filter((paper) => {
     if (filter?.country && filter.country !== "All") {
       const countries = Array.isArray(filter.country) ? filter.country : [filter.country];
       if (!countries.some((country) => paper.country === country || paper.relatedCountries.includes(country))) {
@@ -121,11 +121,11 @@ export function getResearchPapers(
   filter?: ResearchPlatformFilter,
   sort: ResearchPlatformSort = "newest",
 ): ResearchPaperItem[] {
-  return resolveResearchItems(() => sortPapers(filterPapers(filter), sort));
+  return sortPapers(filterPapers(filter), sort);
 }
 
 export function getResearchPaper(id: string): ResearchPaperItem | undefined {
-  return getAllResearchPapers().find((paper) => paper.id === id);
+  return resolveResearchBase().find((paper) => paper.id === id);
 }
 
 export function toPaperRecord(paper: ResearchPaperItem): PaperRecord {
@@ -176,7 +176,7 @@ export function getCountryResearchComparison(countryIds: CountryId[]): CountryRe
 }
 
 export function getPublicationYears(): number[] {
-  return Array.from(new Set(getAllResearchPapers().map((paper) => paper.publicationYear))).sort((a, b) => b - a);
+  return Array.from(new Set(resolveResearchBase().map((paper) => paper.publicationYear))).sort((a, b) => b - a);
 }
 
 export function getPapers(filter?: IntelligenceFilter, sort: IntelligenceSort = "newest"): PaperIntelligenceItem[] {
@@ -203,6 +203,12 @@ export const paperProvider: IntelligenceProvider<PaperIntelligenceItem, CountryI
     return getPapers().filter((item) => item.tags.some((tag) => normalized.includes(tag.toLowerCase())));
   },
 };
+
+export {
+  getLiveResearchMetadata,
+  hydrateResearchCacheFromApi,
+  subscribeResearchCache,
+} from "@/lib/connectors";
 
 export const RESEARCH_SORT_OPTIONS: { value: ResearchPlatformSort; label: string }[] = [
   { value: "newest", label: "Newest" },

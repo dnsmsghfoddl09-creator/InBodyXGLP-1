@@ -1,5 +1,5 @@
 import { getAllNews, type NewsIntelligenceItem } from "@/lib/intelligence/data/mock-news";
-import type { ResearchPaperItem } from "@/lib/intelligence/data/mock-research-platform";
+import { getAllResearchPapers, type ResearchPaperItem } from "@/lib/intelligence/data/mock-research-platform";
 import type { IntelligenceFilter, IntelligenceSort } from "@/lib/intelligence/intelligenceTypes";
 import { applyIntelligenceFilter, applyIntelligenceSort } from "@/lib/intelligence/intelligenceTypes";
 import { fetchPubMedResearch } from "@/lib/connectors/pubmedConnector";
@@ -7,6 +7,7 @@ import { fetchLiveRssNews, fetchRssNews } from "@/lib/connectors/rssConnector";
 import {
   LIVE_DATA_ENABLED,
   type LiveNewsMetadata,
+  type LiveResearchMetadata,
 } from "@/lib/connectors/connectorTypes";
 import { resolveWithLiveFallback, resolveWithLiveFallbackSync } from "@/lib/connectors/connectorUtils";
 
@@ -19,6 +20,9 @@ export {
   type DataSourceMode,
   type IntelligenceScore,
   type LiveNewsMetadata,
+  type LiveResearchMetadata,
+  type PubMedDebugInfo,
+  type PubMedFetchResult,
   type PubMedQueryDefinition,
   type RssFeedDefinition,
   type SummarySource,
@@ -67,8 +71,17 @@ let newsMetadata: LiveNewsMetadata = {
   rssProviderCount: 0,
   activeSource: "mock",
 };
+let researchSnapshot: ResearchPaperItem[] | null = null;
+let researchMetadata: LiveResearchMetadata = {
+  dataSource: "MOCK",
+  lastUpdated: null,
+  pubmedArticleCount: 0,
+  activeSource: "mock",
+};
 let refreshPromise: Promise<LiveNewsMetadata> | null = null;
+let researchRefreshPromise: Promise<LiveResearchMetadata> | null = null;
 const listeners = new Set<() => void>();
+const researchListeners = new Set<() => void>();
 
 function notifyNewsListeners() {
   listeners.forEach((listener) => listener());
@@ -79,8 +92,17 @@ export function subscribeNewsCache(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
+export function subscribeResearchCache(listener: () => void): () => void {
+  researchListeners.add(listener);
+  return () => researchListeners.delete(listener);
+}
+
 export function getLiveNewsMetadata(): LiveNewsMetadata {
   return newsMetadata;
+}
+
+export function getLiveResearchMetadata(): LiveResearchMetadata {
+  return researchMetadata;
 }
 
 export function setNewsSnapshot(
@@ -100,6 +122,27 @@ export function setNewsSnapshot(
     activeProviders,
   };
   notifyNewsListeners();
+}
+
+function notifyResearchListeners() {
+  researchListeners.forEach((listener) => listener());
+}
+
+export function setResearchSnapshot(
+  items: ResearchPaperItem[],
+  source: "live" | "mock",
+  pubmedCount = 0,
+  debug?: LiveResearchMetadata["debug"],
+) {
+  researchSnapshot = items;
+  researchMetadata = {
+    dataSource: source === "live" ? "LIVE" : "MOCK",
+    lastUpdated: new Date().toISOString(),
+    pubmedArticleCount: pubmedCount,
+    activeSource: source,
+    debug,
+  };
+  notifyResearchListeners();
 }
 
 export async function refreshNewsCache(): Promise<LiveNewsMetadata> {
@@ -162,30 +205,125 @@ export async function resolveNewsItemsAsync(
   return resolveNewsItems(filter, sort);
 }
 
+export function resolveResearchBase(): ResearchPaperItem[] {
+  if (!LIVE_DATA_ENABLED) {
+    return getAllResearchPapers();
+  }
+
+  if (researchSnapshot && researchSnapshot.length > 0) {
+    return researchSnapshot;
+  }
+
+  return getAllResearchPapers();
+}
+
 export function resolveResearchItems(
   mock: () => ResearchPaperItem[],
 ): ResearchPaperItem[] {
-  const result = resolveWithLiveFallbackSync({
-    domain: "research",
-    mock,
-    live: () => {
-      throw new Error("PubMed live fetch runs asynchronously; sync path uses mock fallback");
-    },
-  });
+  if (!LIVE_DATA_ENABLED) {
+    return mock();
+  }
 
-  return result.data;
+  if (researchSnapshot && researchSnapshot.length > 0) {
+    return researchSnapshot;
+  }
+
+  return mock();
 }
 
 export async function resolveResearchItemsAsync(
   mock: () => ResearchPaperItem[],
 ): Promise<ResearchPaperItem[]> {
-  const result = await resolveWithLiveFallback({
-    domain: "research",
-    mock,
-    live: () => fetchPubMedResearch(),
-  });
+  await refreshResearchCache();
+  return resolveResearchItems(mock);
+}
 
-  return result.data;
+export async function refreshResearchCache(): Promise<LiveResearchMetadata> {
+  if (!LIVE_DATA_ENABLED) {
+    setResearchSnapshot(getAllResearchPapers(), "mock", 0);
+    return researchMetadata;
+  }
+
+  if (researchRefreshPromise) return researchRefreshPromise;
+
+  researchRefreshPromise = (async () => {
+    try {
+      const result = await fetchPubMedResearch();
+      if (result.items.length === 0) throw new Error("No PubMed articles available");
+
+      setResearchSnapshot(result.items, "live", result.items.length, {
+        endpoint: "/api/research/pubmed",
+        searchQuery: result.searchQuery,
+        pmidsRetrieved: result.pmidsRetrieved,
+        articlesAfterNormalization: result.articlesAfterNormalization,
+        articlesRendered: result.items.length,
+        fallbackStatus: "none",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "PubMed fetch failed";
+      setResearchSnapshot(getAllResearchPapers(), "mock", 0, {
+        endpoint: "/api/research/pubmed",
+        searchQuery: "PubMed fetch failed",
+        pmidsRetrieved: 0,
+        articlesAfterNormalization: 0,
+        articlesRendered: getAllResearchPapers().length,
+        fallbackStatus: "error",
+        error: message,
+      });
+    } finally {
+      researchRefreshPromise = null;
+    }
+
+    return researchMetadata;
+  })();
+
+  return researchRefreshPromise;
+}
+
+export async function hydrateResearchCacheFromApi(): Promise<LiveResearchMetadata> {
+  if (!LIVE_DATA_ENABLED) {
+    setResearchSnapshot(getAllResearchPapers(), "mock", 0, {
+      endpoint: "/api/research/pubmed",
+      searchQuery: "LIVE_DATA_ENABLED=false",
+      pmidsRetrieved: 0,
+      articlesAfterNormalization: 0,
+      articlesRendered: getAllResearchPapers().length,
+      fallbackStatus: "mock",
+    });
+    return researchMetadata;
+  }
+
+  try {
+    const response = await fetch("/api/research/pubmed", { cache: "no-store" });
+    if (!response.ok) throw new Error("PubMed API unavailable");
+
+    const payload = (await response.json()) as {
+      items: ResearchPaperItem[];
+      meta: LiveResearchMetadata;
+    };
+
+    setResearchSnapshot(
+      payload.items,
+      payload.meta.activeSource,
+      payload.meta.pubmedArticleCount,
+      payload.meta.debug,
+    );
+    researchMetadata = payload.meta;
+    notifyResearchListeners();
+    return researchMetadata;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "PubMed API unavailable";
+    setResearchSnapshot(getAllResearchPapers(), "mock", 0, {
+      endpoint: "/api/research/pubmed",
+      searchQuery: "PubMed API unavailable",
+      pmidsRetrieved: 0,
+      articlesAfterNormalization: 0,
+      articlesRendered: getAllResearchPapers().length,
+      fallbackStatus: "error",
+      error: message,
+    });
+    return researchMetadata;
+  }
 }
 
 export async function hydrateNewsCacheFromApi(): Promise<LiveNewsMetadata> {

@@ -5,7 +5,7 @@ import { AddWidgetModal } from "@/components/widgets/AddWidgetModal";
 import { renderWidget } from "@/components/widgets/renderWidget";
 import { WidgetShell } from "@/components/widgets/WidgetShell";
 import { QuickActionsWidget } from "@/components/dashboard/StrategicBrief";
-import { getLiveNewsMetadata, getPlatformDataSourceMode, hydrateNewsCacheFromApi, LIVE_DATA_ENABLED, subscribeNewsCache } from "@/lib/connectors";
+import { getLiveNewsMetadata, getPlatformDataSourceMode, hydrateNewsCacheFromApi, hydrateResearchCacheFromApi, LIVE_DATA_ENABLED, subscribeNewsCache } from "@/lib/connectors";
 import { getRegistryStats } from "@/lib/registry";
 import { widgetRegistry, type WidgetId, type WidgetPageId } from "@/lib/widgets/registry";
 
@@ -155,6 +155,9 @@ export function WidgetBoard({
   useEffect(() => {
     setWidgetIds(widgetRegistry.load(pageId));
     setHydrated(true);
+    if (LIVE_DATA_ENABLED && pageId === "dashboard") {
+      void hydrateResearchCacheFromApi();
+    }
   }, [pageId]);
 
   useEffect(() => {

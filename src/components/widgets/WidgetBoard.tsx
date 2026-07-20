@@ -6,6 +6,7 @@ import { renderWidget } from "@/components/widgets/renderWidget";
 import { WidgetShell } from "@/components/widgets/WidgetShell";
 import { QuickActionsWidget } from "@/components/dashboard/StrategicBrief";
 import { getLiveNewsMetadata, getPlatformDataSourceMode, hydrateNewsCacheFromApi, LIVE_DATA_ENABLED, subscribeNewsCache } from "@/lib/connectors";
+import { getRegistryStats } from "@/lib/registry";
 import { widgetRegistry, type WidgetId, type WidgetPageId } from "@/lib/widgets/registry";
 
 type WidgetBoardProps = {
@@ -95,6 +96,48 @@ function DataSourceStatusIndicator() {
   );
 }
 
+function RegistryStatusWidget() {
+  const [meta, setMeta] = useState(getLiveNewsMetadata());
+
+  useEffect(() => {
+    if (LIVE_DATA_ENABLED) {
+      void hydrateNewsCacheFromApi().then(setMeta);
+    }
+    return subscribeNewsCache(() => setMeta(getLiveNewsMetadata()));
+  }, []);
+
+  const stats = getRegistryStats(meta.rssProviderCount);
+
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wider text-blue-600">Global Source Registry</p>
+          <h3 className="mt-1 text-base font-semibold text-gray-900">Registry Status</h3>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
+          Sprint 7-7
+        </span>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Supported Countries</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.supportedCountries}</p>
+        </div>
+        <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Configured Sources</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.configuredSources}</p>
+        </div>
+        <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Active Providers</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.activeProviders}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WidgetBoard({
   pageId,
   modalOpen: controlledOpen,
@@ -158,6 +201,7 @@ export function WidgetBoard({
         )}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <RegistryStatusWidget />
           {gridWidgetIds.map((id) => {
             const definition = widgetRegistry.getDefinition(id);
             return (

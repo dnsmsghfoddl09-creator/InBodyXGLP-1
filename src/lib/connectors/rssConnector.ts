@@ -6,39 +6,11 @@ import {
   type ParsedRssItem,
   type RssNormalizedArticle,
 } from "@/lib/connectors/rssNormalizer";
+import { getAllRegistryRssFeeds, getPlatformRssFeeds } from "@/lib/registry";
 
-const GOOGLE_NEWS_RSS = (query: string) =>
-  `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
+export const RSS_PRIMARY_FEEDS: RssFeedDefinition[] = getPlatformRssFeeds();
 
-export const RSS_PRIMARY_FEEDS: RssFeedDefinition[] = [
-  {
-    id: "google-news",
-    label: "Google News",
-    url: GOOGLE_NEWS_RSS("GLP-1 OR obesity OR semaglutide OR tirzepatide OR InBody"),
-    credibility: 55,
-  },
-  {
-    id: "who-news",
-    label: "WHO News",
-    url: "https://www.who.int/rss-feeds/news-english.xml",
-    credibility: 90,
-  },
-  {
-    id: "fda-news",
-    label: "FDA News",
-    url: "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml",
-    country: "usa",
-    credibility: 95,
-  },
-  {
-    id: "ema-news",
-    label: "EMA News",
-    url: GOOGLE_NEWS_RSS("site:ema.europa.eu European Medicines Agency obesity diabetes"),
-    credibility: 92,
-  },
-];
-
-export const RSS_FEED_REGISTRY: RssFeedDefinition[] = [...RSS_PRIMARY_FEEDS];
+export const RSS_FEED_REGISTRY: RssFeedDefinition[] = getAllRegistryRssFeeds();
 
 export type RssFetchResult = {
   items: NewsIntelligenceItem[];

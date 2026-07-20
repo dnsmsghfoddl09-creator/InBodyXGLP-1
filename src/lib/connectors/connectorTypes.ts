@@ -1,4 +1,4 @@
-export const LIVE_DATA_ENABLED = false;
+export const LIVE_DATA_ENABLED = true;
 
 export type DataSourceMode = "mock" | "live";
 

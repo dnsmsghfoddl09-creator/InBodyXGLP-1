@@ -25,6 +25,10 @@ import {
   getCountryCompetitorRecords,
   type CompetitorPlatformSort,
 } from "@/lib/intelligence/competitorProvider";
+import {
+  getCountryPaperRecords,
+  type ResearchPlatformSort,
+} from "@/lib/intelligence/paperProvider";
 import type { IntelligenceSort } from "@/lib/intelligence/types";
 import {
   COUNTRY_RESEARCH_TABS,
@@ -45,6 +49,11 @@ function toIntelSort(sort: SortOption): IntelligenceSort {
 function toCompetitorSort(sort: SortOption): CompetitorPlatformSort {
   if (sort === "az") return "alphabetical";
   return "highest-threat";
+}
+
+function toResearchSort(sort: SortOption): ResearchPlatformSort {
+  if (sort === "az") return "alphabetical";
+  return "newest";
 }
 
 function maybeReverse<T>(items: T[], sort: SortOption): T[] {
@@ -110,9 +119,9 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
   }, [countryId, searchFilter, filter, sort, intelSort]);
 
   const filteredPapers = useMemo(() => {
-    const items = intelligenceService.getCountryPapers(countryId, searchFilter, intelSort);
+    const items = getCountryPaperRecords(countryId, searchFilter, toResearchSort(sort));
     return maybeReverse(items, sort);
-  }, [countryId, searchFilter, sort, intelSort]);
+  }, [countryId, searchFilter, sort]);
 
   const filteredTrials = useMemo(() => {
     let items = data.trials.filter(

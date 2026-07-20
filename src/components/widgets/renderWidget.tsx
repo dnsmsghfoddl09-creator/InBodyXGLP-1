@@ -2,6 +2,7 @@
 
 import { ConferenceDashboardWidgets } from "@/components/conference-calendar/ConferenceDashboardWidgets";
 import { CompetitorWatchWidget } from "@/components/competitors/CompetitorIntelligenceModule";
+import { LatestResearchWidget } from "@/components/research/ResearchIntelligenceModule";
 import {
   ExecutiveSummaryCard,
   StrategicSectionCard,
@@ -12,7 +13,6 @@ import type { WidgetId } from "@/lib/widgets/registry";
 const SECTION_WIDGET_IDS = new Set<WidgetId>([
   "intelligence",
   "opportunities",
-  "papers",
   "regulatory",
   "country-focus",
   "content",
@@ -24,7 +24,6 @@ const SECTION_ID_BY_WIDGET: Record<
     WidgetId,
     | "intelligence"
     | "opportunities"
-    | "papers"
     | "regulatory"
     | "country-focus"
     | "content"
@@ -34,7 +33,6 @@ const SECTION_ID_BY_WIDGET: Record<
 > = {
   intelligence: "intelligence",
   opportunities: "opportunities",
-  papers: "papers",
   regulatory: "regulatory",
   "country-focus": "country-focus",
   content: "content",
@@ -52,6 +50,10 @@ export function renderWidget(id: WidgetId) {
 
   if (id === "competitors") {
     return <CompetitorWatchWidget />;
+  }
+
+  if (id === "papers") {
+    return <LatestResearchWidget />;
   }
 
   if (SECTION_WIDGET_IDS.has(id)) {

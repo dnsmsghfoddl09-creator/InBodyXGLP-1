@@ -21,6 +21,10 @@ import { WidgetBoard } from "@/components/widgets/WidgetBoard";
 import type { CountryReport } from "@/lib/intelligence";
 import type { CountryId } from "@/lib/intelligence";
 import { intelligenceService } from "@/lib/intelligence/intelligenceService";
+import {
+  getCountryCompetitorRecords,
+  type CompetitorPlatformSort,
+} from "@/lib/intelligence/competitorProvider";
 import type { IntelligenceSort } from "@/lib/intelligence/types";
 import {
   COUNTRY_RESEARCH_TABS,
@@ -36,6 +40,11 @@ type CountryResearchWorkspaceProps = {
 function toIntelSort(sort: SortOption): IntelligenceSort {
   if (sort === "az") return "alphabetical";
   return "newest";
+}
+
+function toCompetitorSort(sort: SortOption): CompetitorPlatformSort {
+  if (sort === "az") return "alphabetical";
+  return "highest-threat";
 }
 
 function maybeReverse<T>(items: T[], sort: SortOption): T[] {
@@ -122,10 +131,17 @@ export function CountryResearchWorkspace({ countryId, report }: CountryResearchW
   }, [countryId, searchFilter, filter, sort, intelSort]);
 
   const filteredCompetitors = useMemo(() => {
-    let items = intelligenceService.getCountryCompetitors(countryId, searchFilter, intelSort);
-    if (filter !== "All") items = items.filter((item) => item.threatLevel === filter);
-    return maybeReverse(sortByLabel(items, sort), sort);
-  }, [countryId, searchFilter, filter, sort, intelSort]);
+    const records = getCountryCompetitorRecords(
+      countryId,
+      {
+        keyword: searchFilter?.keyword,
+        threatLevel:
+          filter !== "All" ? (filter as "High" | "Medium" | "Low") : "All",
+      },
+      toCompetitorSort(sort),
+    );
+    return maybeReverse(records, sort);
+  }, [countryId, searchFilter, filter, sort]);
 
   const filteredHospitals = useMemo(() => {
     const items = data.hospitals.filter(

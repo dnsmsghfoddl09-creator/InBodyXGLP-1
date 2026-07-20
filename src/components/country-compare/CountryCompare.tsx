@@ -10,6 +10,7 @@ import { OpportunityRanking } from "@/components/country-compare/OpportunityRank
 import { ComparisonTable } from "@/components/country-compare/ComparisonTable";
 import { SwotSummary } from "@/components/country-compare/SwotSummary";
 import { AiStrategicSummary } from "@/components/country-compare/AiStrategicSummary";
+import { CompetitorIntelligenceModule } from "@/components/competitors/CompetitorIntelligenceModule";
 import { NewsIntelligenceModule } from "@/components/news/NewsIntelligenceModule";
 import { WidgetBoard } from "@/components/widgets/WidgetBoard";
 import {
@@ -65,6 +66,7 @@ export function CountryCompare() {
           </div>
           <AiStrategicSummary profiles={profiles} />
           <NewsIntelligenceModule variant="compare" countryIds={selectedIds} limit={6} />
+          <CompetitorIntelligenceModule variant="compare" countryIds={selectedIds} />
           <ComparisonTable profiles={profiles} />
           <SwotSummary profiles={profiles} />
         </div>

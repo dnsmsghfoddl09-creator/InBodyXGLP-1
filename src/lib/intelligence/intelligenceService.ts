@@ -8,10 +8,10 @@ import type {
 import {
   getMockCompetitors,
   getMockConferenceUpdates,
-  getMockNews,
   getMockPapers,
   getMockRegulations,
 } from "@/lib/intelligence/data/mock-intelligence";
+import { getMockNews, type NewsIntelligenceItem } from "@/lib/intelligence/data/mock-news";
 import type {
   CompetitorIntelligenceItem,
   IntelligenceFilter,
@@ -38,15 +38,22 @@ function queryItems<T extends IntelligenceItem>(
   return applyIntelligenceSort(applyIntelligenceFilter(items, filter), sort);
 }
 
-function toNewsRecord(item: IntelligenceItem): NewsRecord {
+function toNewsRecord(item: NewsIntelligenceItem): NewsRecord {
   return {
     id: item.id,
     title: item.title,
     source: item.source,
     country: countryName(item.country),
     publishedDate: item.publishedDate,
+    category: item.category,
     importance: item.importance === "Low" ? "Medium" : (item.importance as "Critical" | "High" | "Medium"),
-    summary: item.summary,
+    relatedCompanies: item.relatedCompanies,
+    relatedTopics: item.relatedTopics,
+    summary: item.executiveSummary,
+    executiveSummary: item.executiveSummary,
+    businessImpact: item.businessImpact,
+    recommendedAction: item.recommendedAction,
+    tags: item.tags,
   };
 }
 
@@ -100,7 +107,7 @@ function importanceToPriority(importance: IntelligenceImportance): 1 | 2 | 3 | 4
 }
 
 export const intelligenceService = {
-  getLatestNews(filter?: IntelligenceFilter, sort: IntelligenceSort = "newest"): IntelligenceItem[] {
+  getLatestNews(filter?: IntelligenceFilter, sort: IntelligenceSort = "newest"): NewsIntelligenceItem[] {
     return queryItems(getMockNews(), filter, sort);
   },
 

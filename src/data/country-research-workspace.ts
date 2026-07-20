@@ -30,8 +30,15 @@ export type NewsRecord = {
   source: string;
   country: string;
   publishedDate: string;
+  category?: string;
   importance: "Critical" | "High" | "Medium";
+  relatedCompanies?: string[];
+  relatedTopics?: string[];
   summary: string;
+  executiveSummary?: string;
+  businessImpact?: string;
+  recommendedAction?: string;
+  tags?: string[];
 };
 
 export type PaperRecord = {

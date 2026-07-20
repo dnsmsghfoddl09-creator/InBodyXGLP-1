@@ -32,6 +32,7 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 export function NewsCard({ item }: { item: NewsRecord }) {
   const importanceVariant =
     item.importance === "Critical" ? "red" : item.importance === "High" ? "amber" : "blue";
+  const executiveSummary = item.executiveSummary ?? item.summary;
 
   return (
     <CardShell>
@@ -43,8 +44,26 @@ export function NewsCard({ item }: { item: NewsRecord }) {
         <MetaRow label="Source" value={item.source} />
         <MetaRow label="Country" value={item.country} />
         <MetaRow label="Published Date" value={item.publishedDate} />
+        {item.category ? <MetaRow label="Category" value={item.category} /> : null}
       </dl>
-      <p className="mt-4 text-sm leading-relaxed text-gray-600">{item.summary}</p>
+      <div className="mt-4 space-y-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Executive Summary</p>
+          <p className="mt-1 text-sm leading-relaxed text-gray-600">{executiveSummary}</p>
+        </div>
+        {item.businessImpact ? (
+          <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">Business Impact</p>
+            <p className="mt-1 text-sm leading-relaxed text-gray-800">{item.businessImpact}</p>
+          </div>
+        ) : null}
+        {item.recommendedAction ? (
+          <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-600">Recommended Action</p>
+            <p className="mt-1 text-sm font-medium leading-relaxed text-gray-900">{item.recommendedAction}</p>
+          </div>
+        ) : null}
+      </div>
     </CardShell>
   );
 }

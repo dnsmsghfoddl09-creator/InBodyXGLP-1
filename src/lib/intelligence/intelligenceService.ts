@@ -11,7 +11,8 @@ import {
   getMockPapers,
   getMockRegulations,
 } from "@/lib/intelligence/data/mock-intelligence";
-import { getMockNews, type NewsIntelligenceItem } from "@/lib/intelligence/data/mock-news";
+import type { NewsIntelligenceItem } from "@/lib/intelligence/data/mock-news";
+import { resolveNewsItems } from "@/lib/connectors";
 import type {
   CompetitorIntelligenceItem,
   IntelligenceFilter,
@@ -108,7 +109,7 @@ function importanceToPriority(importance: IntelligenceImportance): 1 | 2 | 3 | 4
 
 export const intelligenceService = {
   getLatestNews(filter?: IntelligenceFilter, sort: IntelligenceSort = "newest"): NewsIntelligenceItem[] {
-    return queryItems(getMockNews(), filter, sort);
+    return resolveNewsItems(filter, sort);
   },
 
   getLatestPapers(filter?: IntelligenceFilter, sort: IntelligenceSort = "newest"): PaperIntelligenceItem[] {

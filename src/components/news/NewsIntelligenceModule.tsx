@@ -1,20 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NewsCard } from "@/components/country-explorer/ResearchCards";
 import { Badge } from "@/components/ui/Badge";
 import { COUNTRY_LIST, type CountryId } from "@/data/countries";
 import type { NewsRecord } from "@/data/country-research-workspace";
 import {
+  getCountryNewsComparison,
   getNews,
   getNewsByCountries,
+  getNewsIntelligenceScore,
+  hydrateNewsCacheFromApi,
   NEWS_CATEGORIES,
   NEWS_IMPORTANCE_OPTIONS,
   NEWS_PRIORITY_COUNTRIES,
   NEWS_TOPICS,
+  subscribeNewsCache,
   type NewsIntelligenceItem,
 } from "@/lib/intelligence/newsProvider";
 import type { IntelligenceSort } from "@/lib/intelligence/intelligenceTypes";
+import { LIVE_DATA_ENABLED } from "@/lib/connectors";
 
 type NewsIntelligenceModuleProps = {
   variant?: "center" | "compare";
@@ -22,7 +27,7 @@ type NewsIntelligenceModuleProps = {
   limit?: number;
 };
 
-function toNewsRecord(item: NewsIntelligenceItem): NewsRecord {
+function toNewsRecord(item: NewsIntelligenceItem): NewsRecord & { link?: string; intelligenceScore?: string } {
   const country = COUNTRY_LIST.find((entry) => entry.id === item.country)?.name ?? item.country;
 
   return {
@@ -40,6 +45,8 @@ function toNewsRecord(item: NewsIntelligenceItem): NewsRecord {
     businessImpact: item.businessImpact,
     recommendedAction: item.recommendedAction,
     tags: item.tags,
+    link: item.link,
+    intelligenceScore: getNewsIntelligenceScore(item),
   };
 }
 
@@ -53,6 +60,13 @@ export function NewsIntelligenceModule({
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [importanceFilter, setImportanceFilter] = useState<string>("All");
   const [sort, setSort] = useState<IntelligenceSort>("newest");
+  const [cacheVersion, setCacheVersion] = useState(0);
+
+  useEffect(() => {
+    if (!LIVE_DATA_ENABLED) return;
+    void hydrateNewsCacheFromApi();
+    return subscribeNewsCache(() => setCacheVersion((value) => value + 1));
+  }, []);
 
   const records = useMemo(() => {
     const filter = {
@@ -86,20 +100,51 @@ export function NewsIntelligenceModule({
     importanceFilter,
     sort,
     limit,
+    cacheVersion,
   ]);
 
   if (variant === "compare") {
+    const comparison = getCountryNewsComparison(countryIds);
+
     return (
       <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Country News Intelligence</h3>
             <p className="mt-1 text-xs text-gray-500">
-              Headlines related to selected compare markets
+              News volume, topics, companies, and latest strategic headlines
             </p>
           </div>
           <Badge variant="blue">{records.length} stories</Badge>
         </div>
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-gray-100 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <tr>
+                <th className="px-3 py-2">Country</th>
+                <th className="px-3 py-2">News Volume</th>
+                <th className="px-3 py-2">Top Topics</th>
+                <th className="px-3 py-2">Top Companies</th>
+                <th className="px-3 py-2">Latest Strategic News</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.map((row) => (
+                <tr key={row.countryId} className="border-b border-gray-50 align-top">
+                  <td className="px-3 py-3 font-medium text-gray-900">{row.country}</td>
+                  <td className="px-3 py-3 text-gray-700">{row.newsVolume}</td>
+                  <td className="px-3 py-3 text-gray-600">{row.topTopics.join(", ") || "—"}</td>
+                  <td className="px-3 py-3 text-gray-600">{row.topCompanies.join(", ") || "—"}</td>
+                  <td className="px-3 py-3 text-gray-600">
+                    {row.latestStrategicNews.map((item) => item.title).join(" · ") || "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         {records.length === 0 ? (
           <p className="mt-5 text-sm text-gray-500">No news matched the selected countries.</p>
         ) : (

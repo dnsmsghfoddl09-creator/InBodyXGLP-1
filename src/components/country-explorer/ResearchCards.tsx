@@ -29,23 +29,49 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function NewsCard({ item }: { item: NewsRecord }) {
+export function NewsCard({ item }: { item: NewsRecord & { link?: string; intelligenceScore?: string } }) {
+  const isLiveArticle = Boolean(item.link && !item.link.startsWith("#"));
   const importanceVariant =
     item.importance === "Critical" ? "red" : item.importance === "High" ? "amber" : "blue";
-  const executiveSummary = item.executiveSummary ?? item.summary;
+  const executiveSummary = isLiveArticle
+    ? item.executiveSummary ?? "Executive summary pending AI enrichment (Sprint 9)."
+    : item.executiveSummary ?? item.summary;
+  const description = isLiveArticle ? item.summary : undefined;
+  const intelligenceScore =
+    item.intelligenceScore ?? item.tags?.find((tag) => tag === "High" || tag === "Medium" || tag === "Low");
+  const scoreVariant =
+    intelligenceScore === "High" ? "red" : intelligenceScore === "Medium" ? "amber" : "blue";
 
   return (
     <CardShell>
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold leading-snug text-gray-900">{item.title}</h3>
-        <Badge variant={importanceVariant}>{item.importance}</Badge>
+        <div className="flex flex-wrap gap-2">
+          {intelligenceScore ? <Badge variant={scoreVariant}>{intelligenceScore}</Badge> : null}
+          <Badge variant={importanceVariant}>{item.importance}</Badge>
+        </div>
       </div>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
         <MetaRow label="Source" value={item.source} />
         <MetaRow label="Country" value={item.country} />
         <MetaRow label="Published Date" value={item.publishedDate} />
         {item.category ? <MetaRow label="Category" value={item.category} /> : null}
+        {description ? <MetaRow label="Description" value={description} /> : null}
       </dl>
+      {item.relatedCompanies?.length || item.relatedTopics?.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {item.relatedTopics?.map((topic) => (
+            <span key={topic} className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
+              {topic}
+            </span>
+          ))}
+          {item.relatedCompanies?.map((company) => (
+            <span key={company} className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs text-blue-700">
+              {company}
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="mt-4 space-y-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Executive Summary</p>
@@ -64,6 +90,16 @@ export function NewsCard({ item }: { item: NewsRecord }) {
           </div>
         ) : null}
       </div>
+      {item.link && !item.link.startsWith("#") ? (
+        <a
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex text-xs font-medium text-blue-600 hover:text-blue-700"
+        >
+          Original Source Link
+        </a>
+      ) : null}
     </CardShell>
   );
 }

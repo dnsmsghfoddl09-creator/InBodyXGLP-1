@@ -5,6 +5,7 @@ import { AddWidgetModal } from "@/components/widgets/AddWidgetModal";
 import { renderWidget } from "@/components/widgets/renderWidget";
 import { WidgetShell } from "@/components/widgets/WidgetShell";
 import { QuickActionsWidget } from "@/components/dashboard/StrategicBrief";
+import { getLiveNewsMetadata, getPlatformDataSourceMode, hydrateNewsCacheFromApi, LIVE_DATA_ENABLED, subscribeNewsCache } from "@/lib/connectors";
 import { widgetRegistry, type WidgetId, type WidgetPageId } from "@/lib/widgets/registry";
 
 type WidgetBoardProps = {
@@ -54,6 +55,42 @@ function WidgetGrid({
           </WidgetShell>
         );
       })}
+    </div>
+  );
+}
+
+function DataSourceStatusIndicator() {
+  const [meta, setMeta] = useState(getLiveNewsMetadata());
+  const isLive = getPlatformDataSourceMode() === "live";
+
+  useEffect(() => {
+    if (LIVE_DATA_ENABLED) {
+      void hydrateNewsCacheFromApi().then(setMeta);
+    }
+    return subscribeNewsCache(() => setMeta(getLiveNewsMetadata()));
+  }, []);
+
+  const lastUpdated = meta.lastUpdated
+    ? new Date(meta.lastUpdated).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+  return (
+    <div className="hidden items-center gap-2 lg:flex">
+      <span className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+        <span className={`h-2 w-2 rounded-full ${isLive ? "bg-emerald-500" : "bg-blue-500"}`} />
+        Data Source · {meta.dataSource}
+      </span>
+      <span className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+        Last Updated · {lastUpdated}
+      </span>
+      <span className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+        RSS Providers · {meta.rssProviderCount}
+      </span>
     </div>
   );
 }
@@ -113,6 +150,7 @@ export function WidgetBoard({
               Priority intelligence · transform information into action
             </h2>
             <div className="flex items-center gap-3">
+              <DataSourceStatusIndicator />
               <p className="hidden text-xs text-gray-400 sm:block">Updated today 8:00 AM KST</p>
               <AddWidgetButton onClick={() => setModalOpen(true)} />
             </div>

@@ -12,6 +12,7 @@ import {
   type ResearchPaperItem,
   type StudyType,
 } from "@/lib/intelligence/data/mock-research-platform";
+import { resolveResearchItems } from "@/lib/connectors";
 import { intelligenceService } from "@/lib/intelligence/intelligenceService";
 import type {
   IntelligenceFilter,
@@ -120,7 +121,7 @@ export function getResearchPapers(
   filter?: ResearchPlatformFilter,
   sort: ResearchPlatformSort = "newest",
 ): ResearchPaperItem[] {
-  return sortPapers(filterPapers(filter), sort);
+  return resolveResearchItems(() => sortPapers(filterPapers(filter), sort));
 }
 
 export function getResearchPaper(id: string): ResearchPaperItem | undefined {
